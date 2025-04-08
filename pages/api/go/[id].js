@@ -1,36 +1,32 @@
 import fs from 'fs';
 import path from 'path';
 
-const dataFile = path.resolve('./data.json');
+const filePath = path.join(process.cwd(), 'data.json');
 
 function loadData() {
-    if (!fs.existsSync(dataFile)) return {};
-    return JSON.parse(fs.readFileSync(dataFile));
+  if (!fs.existsSync(filePath)) return {};
+  return JSON.parse(fs.readFileSync(filePath));
 }
 
 function saveData(data) {
-    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
 export default function handler(req, res) {
-    const {
-        query: { id },
-    } = req;
+  const { id } = req.query;
+  const data = loadData();
 
-    const data = loadData();
-    const entry = data[id];
-    if (!entry) return res.status(404).end('Link not found');
+  if (!data[id]) return res.status(404).send('Not found');
 
-    const info = {
-        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-        userAgent: req.headers['user-agent'],
-        time: new Date().toISOString(),
-    };
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-    entry.logs.push(info);
-    data[id] = entry;
-    saveData(data);
+  const log = {
+    time: new Date().toISOString(),
+    ip,
+  };
 
-    res.writeHead(302, { Location: entry.url });
-    res.end();
+  data[id].logs.push(log);
+  saveData(data);
+
+  res.redirect(data[id].url);
 }
