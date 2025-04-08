@@ -1,27 +1,27 @@
 import fs from 'fs';
 import path from 'path';
-import { nanoid } from 'nanoid';
 
-const dataFile = path.resolve('./data.json');
+const filePath = path.join(process.cwd(), 'data.json');
 
 function saveData(data) {
-    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
 function loadData() {
-    if (!fs.existsSync(dataFile)) return {};
-    return JSON.parse(fs.readFileSync(dataFile));
+  if (!fs.existsSync(filePath)) return {};
+  const raw = fs.readFileSync(filePath);
+  return JSON.parse(raw);
 }
 
 export default function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).end();
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ error: 'Missing URL' });
+  if (req.method !== 'POST') return res.status(405).end();
 
-    const id = nanoid(6);
-    const data = loadData();
-    data[id] = { url, logs: [] };
-    saveData(data);
+  const { url } = req.body;
+  const id = Math.random().toString(36).substring(2, 8);
+  const data = loadData();
 
-    res.status(200).json({ shortUrl: \`/api/go/\${id}\` });
+  data[id] = { url, logs: [] };
+  saveData(data);
+
+  res.status(200).json({ shortUrl: `/api/go/${id}` });
 }
