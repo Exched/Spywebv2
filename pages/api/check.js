@@ -1,17 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 
-const dataFile = path.resolve('./data.json');
-
-function loadData() {
-    if (!fs.existsSync(dataFile)) return {};
-    return JSON.parse(fs.readFileSync(dataFile));
-}
+const filePath = path.join(process.cwd(), 'data.json');
 
 export default function handler(req, res) {
-    const { id } = req.query;
-    const data = loadData();
+  const data = fs.existsSync(filePath)
+    ? JSON.parse(fs.readFileSync(filePath))
+    : {};
 
-    if (!data[id]) return res.status(404).json({ error: 'Not found' });
-    res.status(200).json(data[id]);
+  res.status(200).json(data);
 }
